@@ -1,0 +1,4 @@
+lxml
+colorlog
+netCDF4
+requests
