@@ -42,7 +42,7 @@ def download_file(url: str, local_filename: str, timeout: Optional[int] = 5) -> 
             if status_code != 200:
                 count += 1
                 LOGGER.warn(f"Failed opening URL.... Retrying {count}")
-                time.sleep(5)
+                time.sleep(timeout)
             else:
                 break_connection_error_loop = True
 
@@ -58,6 +58,6 @@ def download_file(url: str, local_filename: str, timeout: Optional[int] = 5) -> 
                 read_counter += 1
                 LOGGER.warn(f"Reading from stream failed.... Retrying {read_counter}")
                 status_code = -1
-                time.sleep(5)
+                time.sleep(timeout)
 
     return status_code
