@@ -7,6 +7,7 @@ from typing import Tuple
 from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
 from cmip6_utils.dir import CMIPDirLevels, get_cmip_directories_at_level
 from cmip6_utils.historical.rule_exceptions import EC_Earth3_historical_start_year_1970
+from cmip6_utils.misc import BC
 
 
 def years(date):

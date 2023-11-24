@@ -104,7 +104,6 @@ def cmip6_download_file(filename_with_path: str, t: int, verbose: Optional[bool]
     print(path_to_cmip6_data, cmip6_dataset_structure, filename)
     version = get_dataset_version(cmip6_dataset_structure)
 
-    # print(f"{BC.bold('Dataset path:')} {filename_with_path}")
     print(f"{BC.bold('Local path to CMIP6 data:')} {path_to_cmip6_data}")
     print(f"{BC.bold('CMIP6 dataset structure :')} {cmip6_dataset_structure}")
     print(f"{BC.bold('Required filename       :')} {filename}")
@@ -119,9 +118,6 @@ def cmip6_download_file(filename_with_path: str, t: int, verbose: Optional[bool]
     query.options.distrib = True  # default=False
     query.options.replica = True
 
-    # Currently the Esgpull class raises a useless warning.
-    # with warnings.catch_warnings():
-    # warnings.simplefilter("ignore")
     esg = Esgpull(path="/home/dchandan/esgpull_profiles/scratch")
     search_results = esg.context.files(query, max_hits=None)
 

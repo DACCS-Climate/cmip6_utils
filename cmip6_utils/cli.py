@@ -15,13 +15,6 @@ def add_common_parser_args(
         help="Name of the CMIP6 variable for which to download files",
     )
 
-    # parser.add_argument(
-    #     "--rootdir",
-    #     "-d",
-    #     type=str,
-    #     default="/data/Datasets",
-    #     help="Root directory for CMIP6 data. The directory must have a 'CMIP6' folder.",
-    # )
     if exp:
         parser.add_argument(
             "experiment",

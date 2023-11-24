@@ -96,7 +96,6 @@ def search_and_download(search_node: str, master_id: str, output_directory: str,
                         (False, num_found)
                 else:
                     LOGGER.error(f"Download unuccessful. Got error code {status_code}")
-                    # LOGGER.error(f"Failed URL: {url}")
                     break
 
     return (False, num_found)
@@ -175,12 +174,10 @@ def main():
     con.row_factory = sqlite3.Row
     cur = con.cursor()
     update_cur = con.cursor()
-    # res = cur.execute("SELECT * from file WHERE status='Error'")
     res = cur.execute("SELECT * from file WHERE status!='Done'")
 
     totalfiles = len(res.fetchall())
 
-    # res = cur.execute("SELECT * from file WHERE status='Error'")
     res = cur.execute("SELECT * from file WHERE status!='Done'")
 
     problem_ids = []
@@ -194,7 +191,6 @@ def main():
     for item in res:
         master_id = item["master_id"]
         localpath = item["local_path"]  # CMIP6/.../....
-        # print(localpath)
         downloadpath = os.path.join(temp_dir.name, localpath)
         os.makedirs(downloadpath, exist_ok=True)
         if input_retry_ids:
@@ -218,7 +214,6 @@ def main():
             localpath = os.path.join(args.rootdir, localpath)
             LOGGER.info(f"Moving downloaded file to {localpath}")
             os.makedirs(localpath, exist_ok=True)
-            # shutil.move(local_filename, localpath)
             shutil.move(local_filename, os.path.join(localpath, local_filename.split("/")[-1]))
 
             _ = update_cur.execute(f"UPDATE file SET status='Done' WHERE master_id='{master_id}'")

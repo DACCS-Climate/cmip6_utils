@@ -1,4 +1,3 @@
-import argparse
 import os
 from typing import Optional
 
@@ -23,9 +22,6 @@ def walk_cmip_directory(root_dir: str, level: Optional[int] = None) -> list[str]
 
     Modified from https://stackoverflow.com/questions/229186/os-walk-without-digging-into-directories-below
     """
-
-    # if not root_dir.removesuffix("/").endswith("CMIP"):
-    #     raise RuntimeError("For walk_cmip_directory to work, the root directory must end in 'CMIP'")
 
     if root_dir.removesuffix("/").split("/")[-1] not in cmip6_activities:
         raise RuntimeError(
@@ -54,9 +50,6 @@ def get_cmip_directories_at_level(root_dir: str, level: int) -> list[str]:
 
     Modified from https://stackoverflow.com/questions/229186/os-walk-without-digging-into-directories-below
     """
-
-    # if not root_dir.removesuffix("/").endswith("CMIP"):
-    #     raise RuntimeError("For get_cmip_directories_at_level to work, the root directory must end in 'CMIP'")
 
     if root_dir.removesuffix("/").split("/")[-1] not in cmip6_activities:
         raise RuntimeError(

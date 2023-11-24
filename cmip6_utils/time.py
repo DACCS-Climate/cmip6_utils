@@ -16,9 +16,6 @@ def count_months(start_date: str, end_date: str) -> int:
 
     months = 0
 
-    # print(start_month)
-    # print("---------------------------")
-
     while not ((start_year == end_year) and (start_month == end_month)):
         months += 1
 
@@ -26,8 +23,6 @@ def count_months(start_date: str, end_date: str) -> int:
 
         if start_month == 1:
             start_year += 1
-
-        # print(start_month, start_year, months)
 
     return months - 1
 
@@ -37,18 +32,6 @@ def count_months(start_date: str, end_date: str) -> int:
 # assert count_months("185001", "185002") == 0
 # assert count_months("187912", "188012") == 11
 # assert count_months("188001", "188101") == 11
-
-# def test():
-#     d1 = 11
-#     d2 = 12
-
-#     d1 = d1 % 12
-#     d2 = d2 if d2 == 12 else d2 % 12
-#     # print((d2 % 12) - (d1 % 12))
-#     print(d2 - d1)
-
-
-# test()
 
 
 def consecutive_months(d1: str, d2: str):
@@ -66,15 +49,6 @@ def consecutive_months(d1: str, d2: str):
             return y1 == y2 - 1
     else:
         return False
-
-
-# print(consecutive_months("187911", "187912"))
-
-# def years(date):
-#     st, ed = date.split("-")
-#     st = st[:4]
-#     ed = ed[:4]
-#     return int(st), int(ed)
 
 
 def dates_range_from_file(fname: str, only: Optional[str] = None) -> tuple[str, str]:

@@ -94,8 +94,6 @@ def main():
     query.options.replica = True
 
     # Currently the Esgpull class raises a useless warning.
-    # with warnings.catch_warnings():
-    # warnings.simplefilter("ignore")
     esg = Esgpull(path="/home/dchandan/esgpull_profiles/scratch")
     search_results = esg.context.files(query, max_hits=None)
 
@@ -150,9 +148,7 @@ def main():
                     print(f" ---> Download {BC.fail('unsuccessful')}")
 
             if not success:
-                print(
-                    f" ---> {BC.fail('Unable to download this file from any source')}"
-                )
+                print(f" ---> {BC.fail('Unable to download this file from any source')}")
 
     if not changes_made:
         print(f"{BC.warn('No missing files were found')}")
