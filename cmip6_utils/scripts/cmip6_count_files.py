@@ -17,7 +17,7 @@ import os
 import sys
 from pathlib import Path
 
-from cmip6_utils.cli import add_common_parser_args, set_default_rootdir
+from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
 
 
 def cli():
@@ -33,7 +33,7 @@ def cli():
     )
     add_common_parser_args(parser, exp=True)
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
-    set_default_rootdir(args)
+    set_default_activitydir(args)
     return args
 
 
@@ -42,7 +42,7 @@ def main():
 
     print(f"Searching for '{args.variable}' files for experiment '{args.experiment}'")
 
-    P = Path(args.rootdir)
+    P = Path(args.activitydir)
     dir_count = 0
     files_count = 0
     # for dir in P.glob(f"CMIP6/**/{args.experiment}/**/{args.variable}/*/*"):

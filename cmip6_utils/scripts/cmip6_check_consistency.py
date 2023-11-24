@@ -4,7 +4,7 @@ import os
 import sys
 from typing import Tuple
 
-from cmip6_utils.cli import add_common_parser_args, set_default_rootdir
+from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
 from cmip6_utils.dir import CMIPDirLevels, get_cmip_directories_at_level
 from cmip6_utils.historical.rule_exceptions import EC_Earth3_historical_start_year_1970
 
@@ -88,14 +88,14 @@ def cli():
     )
     add_common_parser_args(parser, exp=True)
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
-    set_default_rootdir(args)
+    set_default_activitydir(args)
     return args
 
 
 def main():
     args = cli()
 
-    for exp_root, dirs, _ in get_cmip_directories_at_level(args.rootdir, CMIPDirLevels.source):
+    for exp_root, dirs, _ in get_cmip_directories_at_level(args.activitydir, CMIPDirLevels.source):
         if args.experiment in dirs:
             for root, dirs, files in os.walk(os.path.join(exp_root, args.experiment)):
                 if files:  # we have reached the bottom level

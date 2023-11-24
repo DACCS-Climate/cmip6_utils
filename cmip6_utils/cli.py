@@ -29,9 +29,11 @@ def add_common_parser_args(
             help="Name of the experiment",
             choices=["historical", "ssp245", "ssp370", "ssp585", "ssp126"],
         )
-    parser.add_argument("--rootdir", "-r", type=str, help="Root directory for the CMIP6 activity.")
+
+    # Path to the CMIP6 activity (e.g. /data/Datasets/CMIP6/ScenarioMIP, /data/Datasets/CMIP6/CMIP)
+    parser.add_argument("--activitydir", "-a", type=str, help="Root directory for the CMIP6 activity.")
 
 
-def set_default_rootdir(args: Namespace):
-    if not args.rootdir:
-        args.rootdir = os.path.join("/data/Datasets/CMIP6", experiment_to_activity(args.experiment))
+def set_default_activitydir(args: Namespace):
+    if not args.activitydir:
+        args.activitydir = os.path.join("/data/Datasets/CMIP6", experiment_to_activity(args.experiment))

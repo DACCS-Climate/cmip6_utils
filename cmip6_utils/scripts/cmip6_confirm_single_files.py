@@ -8,7 +8,7 @@ import argparse
 import os
 import sys
 
-from cmip6_utils.cli import add_common_parser_args, set_default_rootdir
+from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
 from cmip6_utils.dir import CMIPDirLevels, get_cmip_directories_at_level
 
 
@@ -21,12 +21,12 @@ def main():
     )
     add_common_parser_args(parser, exp=True)
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
-    set_default_rootdir(args)
+    set_default_activitydir(args)
 
     experiment = args.experiment
 
     num_datasets = 0
-    for exp_root, dirs, _ in get_cmip_directories_at_level(args.rootdir, CMIPDirLevels.source):
+    for exp_root, dirs, _ in get_cmip_directories_at_level(args.activitydir, CMIPDirLevels.source):
         if experiment in dirs:
             for root, dirs, files in os.walk(os.path.join(exp_root, experiment)):
                 if files:  # we have reached the bottom level
