@@ -1,20 +1,39 @@
+#!/usr/bin/env python
+"""
+This is a check/verification utility. It counts the number of dataset directories
+for the user-provided variable-experiment combination, as well as the number of files
+in each of them.
+
+When the variable has been post-processed to merge all the individual files into one
+then the number of datasets and files should be the same.
+
+E.g. Datasets searched: 823
+     Files found: 823
+
+"""
+
+import argparse
 import os
-import os.path as osp
-from argparse import ArgumentParser
+import sys
 from pathlib import Path
+
+from cmip6_utils.cli import add_common_parser_args, set_default_rootdir
 
 
 def cli():
-    parser = ArgumentParser()
-    parser.add_argument("variable", type=str, help="Name of the varbiable to check")
-    parser.add_argument("experiment", type=str, help="Name of the experiment")
-    parser.add_argument(
-        "cmip6_data_dir", type=str, help="Directory where the 'CMIP6' root data directory for CMIP6 data is located"
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=(
+            "This is a check/verification utility. It counts the number of dataset directories "
+            "for the user-provided variable-experiment combination, as well as the number of files "
+            "in each of them. "
+            "When the variable has been post-processed to merge all the individual files into one "
+            "then the number of datasets and files should be the same (assuming no empty dataset direcs.)."
+        ),
     )
-    args = parser.parse_args()
-    if not osp.exists(osp.join(args.cmip6_data_dir, "CMIP6")):
-        raise ValueError("No 'CMIP6' directory in the supplied location for CMIP6 directory.")
-
+    add_common_parser_args(parser, exp=True)
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
+    set_default_rootdir(args)
     return args
 
 
@@ -23,13 +42,16 @@ def main():
 
     print(f"Searching for '{args.variable}' files for experiment '{args.experiment}'")
 
-    P = Path(args.cmip6_data_dir)
+    P = Path(args.rootdir)
     dir_count = 0
     files_count = 0
-    for dir in P.glob(f"CMIP6/**/{args.experiment}/**/{args.variable}/*/*"):
+    # for dir in P.glob(f"CMIP6/**/{args.experiment}/**/{args.variable}/*/*"):
+    for dir in P.glob(f"**/{args.experiment}/**/{args.variable}/*/*"):
         dir_count += 1
         # Assumption: there are no non-variable related files in these directories
         files_count += len(os.listdir(dir))
+        if len(os.listdir(dir)) == 0:
+            print(dir)
 
     print(f"Datasets searched: {dir_count}")
     print(f"Files found: {files_count}")

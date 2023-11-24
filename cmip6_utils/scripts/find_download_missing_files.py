@@ -4,7 +4,7 @@ import os.path as osp
 import shutil
 import tempfile
 import warnings
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -44,8 +44,12 @@ def cmip_path_to_query(path: str) -> Query:
 
 
 def cli() -> Namespace:
-    parser = ArgumentParser()
-    parser.add_argument("dataset_path", type=str, help="Full path to the dataset directory containing the files")
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument(
+        "dataset_path",
+        type=str,
+        help="Full path to the dataset directory containing the files",
+    )
     args = parser.parse_args()
     args.dataset_path = args.dataset_path.rstrip("/")
 
@@ -146,7 +150,9 @@ def main():
                     print(f" ---> Download {BC.fail('unsuccessful')}")
 
             if not success:
-                print(f" ---> {BC.fail('Unable to download this file from any source')}")
+                print(
+                    f" ---> {BC.fail('Unable to download this file from any source')}"
+                )
 
     if not changes_made:
         print(f"{BC.warn('No missing files were found')}")

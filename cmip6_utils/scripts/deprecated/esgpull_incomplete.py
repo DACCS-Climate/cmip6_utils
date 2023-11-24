@@ -1,3 +1,7 @@
+"""
+This code appears to be deprecated.
+"""
+
 from esgpull import Esgpull, Query
 
 # Baseline test. # WORKS

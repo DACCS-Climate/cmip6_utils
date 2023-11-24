@@ -1,6 +1,7 @@
 import argparse
 import glob
 import os
+import sys
 
 from netCDF4 import Dataset
 
@@ -13,10 +14,14 @@ from cmip6_utils.nchelpers import (
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("variable", type=str, help="Name of the vrabiable to check")
-    parser.add_argument("path", type=str, help="Directory to the location with file starting in year 1849")
-    args = parser.parse_args()
+    parser.add_argument(
+        "path",
+        type=str,
+        help="Directory to the location with file starting in year 1849",
+    )
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
     os.chdir(args.path)
     file = glob.glob("*184912*nc")

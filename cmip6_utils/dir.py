@@ -11,7 +11,10 @@ class CMIPDirLevels:
     table = 5
     variable = 6
     grid = 7
-    version = 9
+    version = 8
+
+
+cmip6_activities = ["CMIP", "ScenarioMIP"]
 
 
 def walk_cmip_directory(root_dir: str, level: Optional[int] = None) -> list[str]:
@@ -22,8 +25,13 @@ def walk_cmip_directory(root_dir: str, level: Optional[int] = None) -> list[str]
     Modified from https://stackoverflow.com/questions/229186/os-walk-without-digging-into-directories-below
     """
 
-    if not root_dir.removesuffix("/").endswith("CMIP"):
-        raise RuntimeError("For walk_cmip_directory to work, the root directory must end in 'CMIP'")
+    # if not root_dir.removesuffix("/").endswith("CMIP"):
+    #     raise RuntimeError("For walk_cmip_directory to work, the root directory must end in 'CMIP'")
+
+    if root_dir.removesuffix("/").split("/")[-1] not in cmip6_activities:
+        raise RuntimeError(
+            "For get_cmip_directories_at_level to work, the root directory must end in a CMIP6 " "activity ID."
+        )
 
     if level is None:
         yield from os.walk(root_dir)
@@ -48,8 +56,13 @@ def get_cmip_directories_at_level(root_dir: str, level: int) -> list[str]:
     Modified from https://stackoverflow.com/questions/229186/os-walk-without-digging-into-directories-below
     """
 
-    if not root_dir.removesuffix("/").endswith("CMIP"):
-        raise RuntimeError("For get_cmip_directories_at_level to work, the root directory must end in 'CMIP'")
+    # if not root_dir.removesuffix("/").endswith("CMIP"):
+    #     raise RuntimeError("For get_cmip_directories_at_level to work, the root directory must end in 'CMIP'")
+
+    if root_dir.removesuffix("/").split("/")[-1] not in cmip6_activities:
+        raise RuntimeError(
+            "For get_cmip_directories_at_level to work, the root directory must end in a CMIP6 " "activity ID."
+        )
 
     sep = os.path.sep
     some_dir = root_dir.rstrip(sep)

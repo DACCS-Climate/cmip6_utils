@@ -9,6 +9,7 @@ import multiprocessing as mp
 import os
 import shutil
 import sqlite3
+import sys
 import tempfile
 import time
 from datetime import datetime
@@ -32,7 +33,7 @@ LOGGER.addHandler(stream)
 LOGGER.setLevel(logging.INFO)
 
 
-def search_for_masterid(
+def search_and_download(
     logger: logging.Logger, search_node: str, master_id: str, output_directory: str, timeout: int, ignorehosts=[]
 ) -> tuple:
     logger.info(f"Master ID: {master_id}")
@@ -89,21 +90,31 @@ def search_for_masterid(
 
 
 def cli():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("dbname", type=str, help="Full path to esgpull database")
-    parser.add_argument("variable", type=str, help="Name of the variable whose files are in the database")
-    parser.add_argument(
-        "cmip6_data_dir", type=str, help="Directory where the 'CMIP6' root data directory for CMIP6 data is located"
+    parser = argparse.ArgumentParser(
+        description=("The purpose of this script is to download files that were not downloaded by esgpull during "
+                     "the initial download phase."),
+        epilog="Note: This script can only be run after the esgpull download phase has completed."
     )
+    parser.add_argument("variable", type=str, help="Name of the CMIP6 variable for which to download files")
+    parser.add_argument("dbname", type=str, help=("Full path to esgpull database with information "
+                                                  "on files available for the variable and the files that "
+                                                  "remain to be downloaded."))
+    # parser.add_argument(
+    #     "cmip6_data_dir", type=str, help="Directory where the 'CMIP6' root data directory for CMIP6 data is located"
+    # )
+    parser.add_argument("--rootdir", '-r', type=str, default="/data/Datasets", 
+                        help="Root directory for CMIP6 data. The directory must have a 'CMIP6' folder.")
+
     parser.add_argument("--ignore-hosts", nargs="+", help="ESGF hosts to ignore", default=[])
-    parser.add_argument("--search-node", type=str, default="esgf-node.llnl.gov", help="Search node to query")
+    parser.add_argument("--search-node", type=str, default="esgf-node.llnl.gov",
+                        help="Search node to query. Defaults to LLNL node.")
     parser.add_argument("-n", type=int, help="Number of parallel processes", default=10)
     parser.add_argument("-t", type=int, help="Timeout (in seconds) for downloading a file", default=7)
-    args = parser.parse_args()
+    args = parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
     # All the localpaths in the database begin with CMIP6. I am checking here if there is such a directory in the
     # supplied location for such directory.
-    if not os.path.exists(os.path.join(args.cmip6_data_dir, "CMIP6")):
+    if not os.path.exists(os.path.join(args.rootdir, "CMIP6")):
         raise ValueError("No 'CMIP6' directory in the supplied location for CMIP6 directory.")
 
     return args
@@ -155,7 +166,7 @@ def worker(
     configurer: Callable,
     masterids: list[str],
     localpaths: list[str],
-    cmip6_data_dir: str,
+    rootdir: str,
     return_queue: mp.Queue,
     temp_dir: str,
     search_node: str,
@@ -175,14 +186,14 @@ def worker(
         # return_data.append((False, master_id))
         downloadpath = os.path.join(temp_dir, localpath)
         os.makedirs(downloadpath, exist_ok=True)
-        ret_vals = search_for_masterid(logger, search_node, master_id, downloadpath, timeout, ignore_hosts)
+        ret_vals = search_and_download(logger, search_node, master_id, downloadpath, timeout, ignore_hosts)
         successful = ret_vals[0]
         if len(ret_vals) > 1:
             local_filename = ret_vals[1]
         if not successful:
             return_data.append([False, master_id])
         else:
-            localpath = os.path.join(cmip6_data_dir, localpath)
+            localpath = os.path.join(rootdir, localpath)
             logger.info(f"Moving downloaded file to {localpath}")
             os.makedirs(localpath, exist_ok=True)
             shutil.move(local_filename, localpath)
@@ -220,7 +231,7 @@ def diagnostics(queue: mp.Queue, variable: str, totalfiles: int, nprocs: int) ->
 
     if bad > 0:
         LOGGER.info("Problematic master IDs:")
-        with open(f"unfixed_master_ids_{variable}_{datetime.strftime(datetime.now(), '%Y%m%d')}.txt", "w") as f:
+        with open(f"unfixed_master_ids_{variable}_{datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')}.txt", "w") as f:
             for item in bad_master_ids:
                 LOGGER.error(item)
                 f.write(item + "\n")
@@ -289,7 +300,7 @@ def main():
                     worker_configurer,
                     masterids[thisStart:thisEnd],
                     localpaths[thisStart:thisEnd],
-                    args.cmip6_data_dir,
+                    args.rootdir,
                     return_queue,
                     temp_dir.name,
                     args.search_node,

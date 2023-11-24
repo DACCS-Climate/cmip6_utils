@@ -1,12 +1,20 @@
 #!/usr/bin/env python
+
+"""
+This script can be used to download a file. For example, if the desired local file is:
+
+/data/Datasets/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/Amon/hurs/gn/v20181212/hurs_Amon_MIROC6_historical_r1i1p1f1_gn_195001-201412.nc
+
+Then this script can be called to download it.
+"""
 import os
 import os.path as osp
 import shutil
+import sys
 import tempfile
-import warnings
-from argparse import ArgumentParser, Namespace
+from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Optional, Tuple
 
 from esgpull import Esgpull, Query
 
@@ -43,11 +51,25 @@ def cmip_path_to_query(path: str) -> Query:
 
 
 def cli() -> Namespace:
-    parser = ArgumentParser()
-    parser.add_argument("dataset_path", type=str, help="Full path to the dataset directory containing the files")
-    args = parser.parse_args()
-    args.dataset_path = args.dataset_path.rstrip("/")
+    parser = ArgumentParser(
+        formatter_class=ArgumentDefaultsHelpFormatter,
+        description=(
+            "This script can be used to download a file. E.g. if file is "
+            "/the/full/local/path/to/filename.nc. Then this script will search "
+            "for filename.nc and, if available, download it to /the/full/local/path/to."
+        ),
+    )
+    parser.add_argument("filename_with_path", type=str, help="Full local path to the file to download")
+    parser.add_argument(
+        "-t",
+        type=int,
+        help=("Timeout (in seconds) for downloading a file " "(parameter to requests.get())."),
+        default=5,
+    )
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
+    if not args.filename_with_path.endswith(".nc"):
+        raise ValueError("The supplied argument to the program is not a netCDF file")
     return args
 
 
@@ -59,7 +81,7 @@ def parse_file_path(path: str) -> Tuple[str, str]:
     return basename[:i].rstrip("/"), basename[i:].strip("/"), filename
 
 
-def dataset_version(path: str) -> str:
+def get_dataset_version(path: str) -> str:
     version = path.strip().split("/")[-1]
     assert version.startswith("v")
     return version
@@ -74,12 +96,15 @@ def print_query(query: Query):
 
 def main():
     args = cli()
+    cmip6_download_file(args.filename_with_path, args.t)
 
-    path_to_cmip6_data, cmip6_dataset_structure, filename = parse_file_path(args.dataset_path)
-    # print(path_to_cmip6_data, cmip6_dataset_structure, filename)
-    version = dataset_version(cmip6_dataset_structure)
 
-    # print(f"{BC.bold('Dataset path:')} {args.dataset_path}")
+def cmip6_download_file(filename_with_path: str, t: int, verbose: Optional[bool] = True):
+    path_to_cmip6_data, cmip6_dataset_structure, filename = parse_file_path(filename_with_path)
+    print(path_to_cmip6_data, cmip6_dataset_structure, filename)
+    version = get_dataset_version(cmip6_dataset_structure)
+
+    # print(f"{BC.bold('Dataset path:')} {filename_with_path}")
     print(f"{BC.bold('Local path to CMIP6 data:')} {path_to_cmip6_data}")
     print(f"{BC.bold('CMIP6 dataset structure :')} {cmip6_dataset_structure}")
     print(f"{BC.bold('Required filename       :')} {filename}")
@@ -88,7 +113,8 @@ def main():
 
     query = cmip_path_to_query(cmip6_dataset_structure)
 
-    print_query(query)
+    if verbose:
+        print_query(query)
 
     query.options.distrib = True  # default=False
     query.options.replica = True
@@ -105,7 +131,6 @@ def main():
 
     for res in search_results:
         if version == res.version:
-            # print(res.filename)
             if res.filename == filename:
                 data_ = (res.url, res.checksum, res.local_path, res.data_node)
                 file_urls.append(ESGFFile(*data_))
@@ -116,7 +141,7 @@ def main():
     for item in file_urls:
         tf_ = tempfile.NamedTemporaryFile()
         print(f" ---> Attempting download from: {item.data_node}")
-        err = download_file(item.url, tf_.name)
+        err = download_file(item.url, tf_.name, timeout=t)
 
         if err == 200:
             print(f" ---> Download {BC.okgreen('successful')}")
@@ -133,7 +158,9 @@ def main():
                 if not vrfy2:
                     print(f" ---> {BC.fail('Checksum of copied file failed')}")
                     os.remove(local_filename)
-                    # break
+                    success = False
+                else:
+                    break
             else:
                 print(f" ---> Checksum {BC.fail('FAIL')}")
         else:
@@ -141,6 +168,9 @@ def main():
 
     if not success:
         print(f" ---> {BC.fail('Unable to download this file from any source')}")
+        return -1
+    else:
+        return 0
 
 
 if __name__ == "__main__":

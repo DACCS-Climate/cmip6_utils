@@ -5,7 +5,6 @@ import os.path as osp
 import shutil
 import sys
 import tempfile
-from math import exp
 
 from netCDF4 import Dataset
 
@@ -118,11 +117,17 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
     months_offset = count_months(expected_start_month, first_file_start_date)
     start_year = int(expected_start_month[:4]) + 1
     if months_offset > 0:
-        print(BC.fail(f"Discontinuity of {months_offset} months at the start of time series."))
+        print(
+            BC.fail(
+                f"Discontinuity of {months_offset} months at the start of time series."
+            )
+        )
         print(BC.fail(f"First file is: {osp.basename(reffile)}"))
         print(BC.fail(f"Appending contents of first file at offset {months_offset}"))
     else:
-        print(f"Time series will start at index {months_offset} corresponding to year {start_year}")
+        print(
+            f"Time series will start at index {months_offset} corresponding to year {start_year}"
+        )
 
     if not dry_run:
         # first step is to duplicate the first file
@@ -144,7 +149,11 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
         # if not consecutive_months(global_edy, sty):
         # offset = count_months(global_edy, sty)
         if months_offset != 0:
-            print(BC.fail(f"Discontinuity of {months_offset} months between {running_edy} and {this_file_sty}."))
+            print(
+                BC.fail(
+                    f"Discontinuity of {months_offset} months between {running_edy} and {this_file_sty}."
+                )
+            )
             print(BC.fail(f"Incrementing stidx by {months_offset}"))
             status = 1
             if not dry_run:
@@ -154,7 +163,9 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
             ncf = Dataset(file, "r")
             tlen = len(ncf.dimensions["time"])
             edidx = stidx + tlen
-            print(f"        ---> Appending file: {osp.basename(file)} from IDX {stidx} to {edidx}")
+            print(
+                f"        ---> Appending file: {osp.basename(file)} from IDX {stidx} to {edidx}"
+            )
 
             for varname, ovar in ovars:
                 ovar[stidx:edidx] = ncf[varname][:]
@@ -193,20 +204,43 @@ def delete_move_files(main_dir: str, tseries_fname: str):
 
 
 def cli():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument("variable", type=str, help="Name of the vrabiable to check")
     parser.add_argument(
-        "cmip6_data_dir", type=str, help="Directory where the 'CMIP6' root data directory for CMIP6 data is located"
+        "--root_dir",
+        "-r",
+        type=str,
+        default="/data/Datasets",
+        help=(
+            "Directory where the 'CMIP6' root data directory for CMIP6 data is located. "
+            "Defaults to /data/Datasets."
+        ),
     )
-    parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--combine-only", action="store_true")
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help=(
+            "Dry run. Does not combine files and does not make any modifications on the disk. "
+            "This will simply print the processing it will do and then exit. Useful as a first "
+            "step before making changes."
+        ),
+    )
+    parser.add_argument(
+        "--combine-only",
+        action="store_true",
+        help="Combine files only. Don't move it from the temporary directory to original directory.",
+    )
 
-    args = parser.parse_args()
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
     # All the localpaths in the database begin with CMIP6. I am checking here if there is such a directory in the
     # supplied location for such directory.
-    if not osp.exists(osp.join(args.cmip6_data_dir, "CMIP6")):
-        raise ValueError("No 'CMIP6' directory in the supplied location for CMIP6 directory.")
+    if not osp.exists(osp.join(args.root_dir, "CMIP6")):
+        raise ValueError(
+            "No 'CMIP6' directory in the supplied location for CMIP6 directory."
+        )
 
     return args
 
@@ -223,7 +257,7 @@ def main():
     temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
     odir = temp_dir.name
 
-    for root, dirs, files in os.walk(args.cmip6_data_dir):
+    for root, dirs, files in os.walk(args.root_dir):
         if files:  # we have reached the bottom level
             files = sorted(files)
             nfiles = len(files)
@@ -245,7 +279,9 @@ def main():
                             delete_move_files(root, output_file_name)
 
                 else:
-                    list_of_datasets_not_needing_changes.append(osp.join(root, files[0]))
+                    list_of_datasets_not_needing_changes.append(
+                        osp.join(root, files[0])
+                    )
                     datasets_not_needing_changes += 1
 
     if datasets_not_needing_changes > 0:

@@ -1,0 +1,5 @@
+{
+    "black-formatter.path": [ "/home/dchandan/mambaforge/envs/main/bin/black" ],
+    "flake8.path": [ "/home/dchandan/mambaforge/envs/main/bin/flake8" ],
+    "python.defaultInterpreterPath": "/home/dchandan/mambaforge/bin/python",
+}
