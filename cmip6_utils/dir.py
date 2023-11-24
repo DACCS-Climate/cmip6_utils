@@ -2,6 +2,8 @@ import argparse
 import os
 from typing import Optional
 
+from cmip6_utils.cmip6 import cmip6_activities
+
 
 class CMIPDirLevels:
     institution = 1
@@ -12,9 +14,6 @@ class CMIPDirLevels:
     variable = 6
     grid = 7
     version = 8
-
-
-cmip6_activities = ["CMIP", "ScenarioMIP"]
 
 
 def walk_cmip_directory(root_dir: str, level: Optional[int] = None) -> list[str]:

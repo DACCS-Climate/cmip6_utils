@@ -36,11 +36,3 @@ class BC:
 def verify_checksum(fname: str, refchecksum: str) -> bool:
     checksum = hashlib.sha256(open(fname, "rb").read()).hexdigest()
     return checksum == refchecksum
-
-def experiment_to_activity(experiment: str) -> str:
-    if experiment == "historical":
-        return "CMIP"
-    elif experiment in ["ssp245", "ssp370", "ssp585", "ssp126"]:
-        return "ScenarioMIP"
-    else:
-        raise ValueError(f"Unknown experiment: {experiment}")

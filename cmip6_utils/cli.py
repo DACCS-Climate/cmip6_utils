@@ -2,7 +2,7 @@ import os
 from argparse import ArgumentParser, Namespace
 from typing import Optional
 
-from cmip6_utils.misc import experiment_to_activity
+from cmip6_utils.cmip6 import experiment_to_activity
 
 
 def add_common_parser_args(
