@@ -31,7 +31,7 @@ from cmip6_utils.file import download_file
 from cmip6_utils.misc import verify_checksum
 
 
-def search_and_download(search_node: str, master_id: str, output_directory: str, ignorehosts=[]) -> tuple:
+def search_and_download(search_node: str, master_id: str, output_directory: str, timeout: int, ignorehosts=[]) -> tuple:
     """This function queries the ESGF search API to find the files missing for the masterid and downloads them.
 
     :param search_node: _description_
@@ -83,7 +83,7 @@ def search_and_download(search_node: str, master_id: str, output_directory: str,
 
                 local_filename = url.split("/")[-1]
                 local_filename = os.path.join(output_directory, local_filename)
-                status_code = download_file(url, local_filename)
+                status_code = download_file(url, local_filename, timeout=timeout)
 
                 if status_code == 200:
                     LOGGER.info("Download successful")
@@ -138,6 +138,13 @@ def main():
         type=str,
         default="esgf-node.llnl.gov",
         help="Search node to query. Defaults to LLNL node.",
+    )
+    parser.add_argument(
+        "--timeout",
+        "-t",
+        type=int,
+        help=("Timeout (in seconds) for downloading a file " "(parameter to requests.get())."),
+        default=5,
     )
     parser.add_argument("--retry", "-r", type=str)
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
@@ -198,7 +205,7 @@ def main():
                 count += 1
                 problem_ids.append(master_id)
                 continue
-        ret_vals = search_and_download(args.search_node, master_id, downloadpath, args.ignore_hosts)
+        ret_vals = search_and_download(args.search_node, master_id, downloadpath, args.timeout, args.ignore_hosts)
         successful = ret_vals[0]
         num_found = ret_vals[1]
         if len(ret_vals) > 2:
