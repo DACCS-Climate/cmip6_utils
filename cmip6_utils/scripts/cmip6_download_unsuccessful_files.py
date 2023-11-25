@@ -28,7 +28,7 @@ LOGGER.addHandler(stream)
 LOGGER.setLevel(logging.INFO)
 
 from cmip6_utils.file import download_file
-from cmip6_utils.misc import verify_checksum
+from cmip6_utils.misc import ESGF_offline_nodes, verify_checksum
 
 
 def search_and_download(search_node: str, master_id: str, output_directory: str, timeout: int, ignorehosts=[]) -> tuple:
@@ -132,7 +132,7 @@ def main():
         help="Root directory for CMIP6 data. The directory must have a 'CMIP6' folder.",
     )
 
-    parser.add_argument("--ignore-hosts", nargs="+", help="ESGF hosts to ignore", default=[])
+    parser.add_argument("--ignore-nodes", nargs="+", help="ESGF nodes to ignore", default=[])
     parser.add_argument(
         "--search-node",
         type=str,
@@ -168,6 +168,17 @@ def main():
                 input_retry_ids.append(line.strip())
     else:
         input_retry_ids = []
+
+    ignored_nodes = args.ignore_nodes
+    offline_nodes = ESGF_offline_nodes()
+
+    LOGGER.info(f"Offline nodes: {offline_nodes}")
+
+    for node in offline_nodes:
+        if node not in ignored_nodes:
+            ignored_nodes.append(node)
+
+    LOGGER.info(f"Ignoring nodes: {ignored_nodes}")
 
     dbname = args.dbname
     LOGGER.info(f"Using database: {dbname}")
@@ -205,7 +216,7 @@ def main():
                 count += 1
                 problem_ids.append(master_id)
                 continue
-        ret_vals = search_and_download(args.search_node, master_id, downloadpath, args.timeout, args.ignore_hosts)
+        ret_vals = search_and_download(args.search_node, master_id, downloadpath, args.timeout, ignored_nodes)
         successful = ret_vals[0]
         num_found = ret_vals[1]
         if len(ret_vals) > 2:
