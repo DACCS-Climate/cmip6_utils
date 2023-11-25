@@ -1,5 +1,7 @@
 import hashlib
 
+import requests
+
 
 class BC:
     HEADER = "\033[95m"
@@ -36,3 +38,23 @@ class BC:
 def verify_checksum(fname: str, refchecksum: str) -> bool:
     checksum = hashlib.sha256(open(fname, "rb").read()).hexdigest()
     return checksum == refchecksum
+
+
+def ESGF_offline_nodes() -> list[str]:
+    from bs4 import BeautifulSoup
+
+    r = requests.get("https://esgf-node.llnl.gov/status/")
+    html = BeautifulSoup(r.text, "html.parser")
+    tables = html.find_all("table")
+    t = tables[2]
+    offline = []
+
+    for row in t.find_all("tr"):
+        td = row.find_all("td")
+        if td:
+            node = td[1].contents[0]
+            status = td[2].contents[1].find("b").contents[0]
+            if status == "DOWN":
+                offline.append(node)
+
+    return offline

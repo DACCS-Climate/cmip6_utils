@@ -2,3 +2,4 @@ lxml
 colorlog
 netCDF4
 requests
+beautifulsoup4
