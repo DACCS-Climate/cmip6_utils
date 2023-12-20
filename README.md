@@ -11,7 +11,8 @@ This program counts the number of datasets and individual files found for the gi
 This program loops over the files that were not successfully downloaded by `esgpull` and attempts to download them.
 
 ### cmip6_empty_dirs
-    [!NOTE]
-    This is a work in progress script.
+> [!NOTE]
+> This script is a work in progress.
+
 This script lists the dataset directories that do not have any files in them.
 
