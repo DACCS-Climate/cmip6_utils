@@ -9,16 +9,17 @@ def cli() -> Namespace:
     parser = ArgumentParser(
         formatter_class=ArgumentDefaultsHelpFormatter,
         description=(
-            "This script can be used to download all available files in a dataset. "
+            "This script can be used to download all available files in a dataset in which "
+            "all files are 1 year long. "
             "For example for /the/full/local/path/to/dataset, the script will query all "
             "all available files and download the missing files to that location."
         ),
     )
-    parser.add_argument("dataset", type=str, help="Full local path to the file to download")
+    parser.add_argument("dataset", type=str, help="Full local path to the dataset to download")
     parser.add_argument(
         "-t",
         type=int,
-        help=("Timeout (in seconds) for downloading a file " "(parameter to requests.get())."),
+        help=("Timeout (in seconds) for downloading a file (parameter to requests.get())."),
         default=5,
     )
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
@@ -29,7 +30,7 @@ def cli() -> Namespace:
 
 
 def gen_filename_structure(path: str) -> str:
-    """Parses the path of the dataset to compose the common base filename.
+    """Parses the path of the dataset to compose the base filename structure of files in the dataset.
     All filenames start with the structure: variableid_tableid_sourceid_experimentid_variantid_grid
 
     :param path: full path to the dataset
@@ -56,7 +57,7 @@ def main():
     filename_base = gen_filename_structure(args.dataset)
     print(filename_base)
 
-    count = 0
+    count = 0  # counter for total files
     err_count = 0
     exists_count = 0
     for year in range(1850, 2015):
