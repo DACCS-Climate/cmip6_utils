@@ -2,6 +2,7 @@
 import os
 import os.path as osp
 import shutil
+import sys
 import tempfile
 import warnings
 from argparse import ArgumentDefaultsHelpFormatter, ArgumentParser, Namespace
@@ -44,14 +45,20 @@ def cmip_path_to_query(path: str) -> Query:
 
 
 def cli() -> Namespace:
-    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
-    parser.add_argument(
-        "dataset_path",
-        type=str,
-        help="Full path to the dataset directory containing the files",
+    parser = ArgumentParser(
+        formatter_class=ArgumentDefaultsHelpFormatter,
+        description=(
+            "This script can be used to download all available files in a dataset. "
+            "For example for /the/full/local/path/to/dataset, the script will query all "
+            "all available files and download the missing files to that location."
+        ),
     )
-    args = parser.parse_args()
-    args.dataset_path = args.dataset_path.rstrip("/")
+    parser.add_argument("dataset", type=str, help="Full local path to the dataset to download")
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
+    args.dataset = args.dataset.rstrip("/")
+
+    if args.dataset.endswith(".nc"):
+        raise ValueError("The supplied argument should be the path to the datset, not a specific file")
 
     return args
 
@@ -76,11 +83,16 @@ def print_query(query: Query):
 
 def main():
     args = cli()
+    find_download_missing_files(args.dataset)
 
-    path_to_cmip6_data, cmip6_dataset_structure = split_dataset_path(args.dataset_path)
-    version = dataset_version(args.dataset_path)
 
-    # print(f"{BC.bold('Dataset path:')} {args.dataset_path}")
+def find_download_missing_files(dataset: str):
+    # args = cli()
+
+    path_to_cmip6_data, cmip6_dataset_structure = split_dataset_path(dataset)
+    version = dataset_version(dataset)
+
+    # print(f"{BC.bold('Dataset path:')} {args.dataset}")
     print(f"{BC.bold('Local path to CMIP6 data:')} {path_to_cmip6_data}")
     print(f"{BC.bold('CMIP6 dataset structure :')} {cmip6_dataset_structure}")
     print(f"{BC.bold('Dataset version         :')} {version}")
@@ -93,7 +105,6 @@ def main():
     query.options.distrib = True  # default=False
     query.options.replica = True
 
-    # Currently the Esgpull class raises a useless warning.
     esg = Esgpull(path="/home/dchandan/esgpull_profiles/scratch")
     search_results = esg.context.files(query, max_hits=None)
 
@@ -114,7 +125,7 @@ def main():
 
     changes_made = False
     for filename, entries in dataset_files.items():
-        if not osp.exists(osp.join(args.dataset_path, filename)):
+        if not osp.exists(osp.join(dataset, filename)):
             success = False
             print(f"Found missing file: {filename}")
 
