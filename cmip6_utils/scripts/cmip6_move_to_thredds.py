@@ -5,6 +5,7 @@ import sys
 from os.path import join
 from shutil import move, rmtree
 
+from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
 from cmip6_utils.dir import get_cmip_directories_at_level
 from cmip6_utils.misc import BC
 
@@ -21,15 +22,7 @@ def cli():
             "if you are 100% sure that all pre-processing up to this point has completed correctly."
         ),
     )
-    parser.add_argument("variable", type=str, help="Name of the CMIP6 variable")
-    parser.add_argument("experiment", type=str, help="Name of the CMIP6 experiment")
-    parser.add_argument(
-        "--rootdir",
-        "-d",
-        type=str,
-        default="/data/Datasets",
-        help="Location for CMIP6 data. The directory must contain the 'CMIP6' folder.",
-    )
+    add_common_parser_args(parser, exp=True, adir=True, dryrun=True)
     parser.add_argument(
         "--threddsdir",
         "-D",
@@ -38,17 +31,8 @@ def cli():
         help="Location for CMIP6 data. The directory must contain the 'CMIP6' folder.",
     )
 
-    parser.add_argument(
-        "--dry-run",
-        "-t",
-        action="store_true",
-        help=(
-            "Dry run. Does not move/remove any files. "
-            "This will simply print the processing it will do and then exit. Useful as a first "
-            "step before making changes."
-        ),
-    )
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
+    set_default_activitydir(args)
     return args
 
 
@@ -58,10 +42,13 @@ def main():
     exp_str = args.experiment
     varname_str = f"/{args.variable}/"
 
-    cmip_dir = join(args.rootdir, "CMIP6/CMIP")
     count = 0
 
-    for root, dirs, _ in get_cmip_directories_at_level(cmip_dir, 7):
+    _tmp = args.activitydir.strip("/").split("/")
+    _i = _tmp.index("CMIP6")
+    rootdir = "/" + "/".join(_tmp[:_i])
+
+    for root, dirs, _ in get_cmip_directories_at_level(args.activitydir, 7):  # here 'dirs' are the version directories
         if exp_str in root and varname_str in root:
             if len(dirs) > 1:
                 raise RuntimeError(
@@ -74,7 +61,7 @@ def main():
                 version = dirs[0]
                 source_dir = join(root, version)
                 print(BC.okgreen(f"Source: {source_dir}"))
-                dest_dir = root.replace(args.rootdir, args.threddsdir)
+                dest_dir = root.replace(rootdir, args.threddsdir)
                 print(f"Destination : {dest_dir}")
                 if not args.dry_run:
                     os.makedirs(dest_dir, exist_ok=True)

@@ -8,6 +8,8 @@ import tempfile
 
 from netCDF4 import Dataset
 
+from cmip6_utils.cli import add_common_parser_args, set_default_activitydir
+from cmip6_utils.dir import CMIPDirLevels, get_cmip_directories_at_level
 from cmip6_utils.historical.rule_exceptions import EC_Earth3_historical_start_year_1970
 from cmip6_utils.misc import BC
 from cmip6_utils.nchelpers import (
@@ -94,8 +96,6 @@ def check_linearity(fname: str) -> bool:
 
 
 def get_start_month(fname):
-    # registered_exceptions = [EC_Earth3_historical_start_year_1970]
-
     if "EC-Earth-Consortium/EC-Earth3/historical" in fname:
         if EC_Earth3_historical_start_year_1970.check_ignore(fname):
             return "196912"
@@ -117,17 +117,11 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
     months_offset = count_months(expected_start_month, first_file_start_date)
     start_year = int(expected_start_month[:4]) + 1
     if months_offset > 0:
-        print(
-            BC.fail(
-                f"Discontinuity of {months_offset} months at the start of time series."
-            )
-        )
+        print(BC.fail(f"Discontinuity of {months_offset} months at the start of time series."))
         print(BC.fail(f"First file is: {osp.basename(reffile)}"))
         print(BC.fail(f"Appending contents of first file at offset {months_offset}"))
     else:
-        print(
-            f"Time series will start at index {months_offset} corresponding to year {start_year}"
-        )
+        print(f"Time series will start at index {months_offset} corresponding to year {start_year}")
 
     if not dry_run:
         # first step is to duplicate the first file
@@ -139,9 +133,6 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
 
         stidx = len(oncf.dimensions["time"])
 
-    # __import__("IPython").embed()
-    # sys.exit()
-
     # Now going through all the remaining files and appending them to the newly copied file
     for file in files[1:]:
         this_file_sty, this_file_edy = dates_range_from_file(file)
@@ -149,11 +140,7 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
         # if not consecutive_months(global_edy, sty):
         # offset = count_months(global_edy, sty)
         if months_offset != 0:
-            print(
-                BC.fail(
-                    f"Discontinuity of {months_offset} months between {running_edy} and {this_file_sty}."
-                )
-            )
+            print(BC.fail(f"Discontinuity of {months_offset} months between {running_edy} and {this_file_sty}."))
             print(BC.fail(f"Incrementing stidx by {months_offset}"))
             status = 1
             if not dry_run:
@@ -163,9 +150,7 @@ def combine_files(files: list[str], ofname: str, dry_run: bool):
             ncf = Dataset(file, "r")
             tlen = len(ncf.dimensions["time"])
             edidx = stidx + tlen
-            print(
-                f"        ---> Appending file: {osp.basename(file)} from IDX {stidx} to {edidx}"
-            )
+            print(f"        ---> Appending file: {osp.basename(file)} from IDX {stidx} to {edidx}")
 
             for varname, ovar in ovars:
                 ovar[stidx:edidx] = ncf[varname][:]
@@ -204,29 +189,8 @@ def delete_move_files(main_dir: str, tseries_fname: str):
 
 
 def cli():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument("variable", type=str, help="Name of the vrabiable to check")
-    parser.add_argument(
-        "--root_dir",
-        "-r",
-        type=str,
-        default="/data/Datasets",
-        help=(
-            "Directory where the 'CMIP6' root data directory for CMIP6 data is located. "
-            "Defaults to /data/Datasets."
-        ),
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help=(
-            "Dry run. Does not combine files and does not make any modifications on the disk. "
-            "This will simply print the processing it will do and then exit. Useful as a first "
-            "step before making changes."
-        ),
-    )
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    add_common_parser_args(parser, exp=True, adir=True, dryrun=True)
     parser.add_argument(
         "--combine-only",
         action="store_true",
@@ -234,13 +198,7 @@ def cli():
     )
 
     args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
-
-    # All the localpaths in the database begin with CMIP6. I am checking here if there is such a directory in the
-    # supplied location for such directory.
-    if not osp.exists(osp.join(args.root_dir, "CMIP6")):
-        raise ValueError(
-            "No 'CMIP6' directory in the supplied location for CMIP6 directory."
-        )
+    set_default_activitydir(args)
 
     return args
 
@@ -257,32 +215,32 @@ def main():
     temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
     odir = temp_dir.name
 
-    for root, dirs, files in os.walk(args.root_dir):
-        if files:  # we have reached the bottom level
-            files = sorted(files)
-            nfiles = len(files)
-            if f"/{args.variable}/" in root:  # filter by variable name
-                if nfiles > 1:
-                    total_datasets_to_combine += 1
-                    print(f"Processing: {root}")
-                    print(f"    ---> Files to combine: {len(files)}")
-                    print(f"    ---> Output dir is: {odir}")
-                    output_file_name = make_output_file_name(files[0], files[-1])
-                    print(f"    ---> Output filename: {output_file_name}")
+    for exp_root, dirs, files in get_cmip_directories_at_level(args.activitydir, CMIPDirLevels.source):
+        if args.experiment in dirs:
+            for root, dirs, files in os.walk(os.path.join(exp_root, args.experiment)):
+                if files:  # we have reached the bottom level
+                    files = sorted(files)
+                    nfiles = len(files)
+                    if f"/{args.variable}/" in root:  # filter by variable name
+                        if nfiles > 1:
+                            total_datasets_to_combine += 1
+                            print(f"Processing: {root}")
+                            print(f"    ---> Files to combine: {len(files)}")
+                            print(f"    ---> Output dir is: {odir}")
+                            output_file_name = make_output_file_name(files[0], files[-1])
+                            print(f"    ---> Output filename: {output_file_name}")
 
-                    files = [osp.join(root, f) for f in files]
-                    output_file_name = osp.join(odir, output_file_name)
-                    combine_files(files, output_file_name, dry_run)
+                            files = [osp.join(root, f) for f in files]
+                            output_file_name = osp.join(odir, output_file_name)
+                            combine_files(files, output_file_name, dry_run)
 
-                    if not dry_run:
-                        if not combine_only:
-                            delete_move_files(root, output_file_name)
+                            if not dry_run:
+                                if not combine_only:
+                                    delete_move_files(root, output_file_name)
 
-                else:
-                    list_of_datasets_not_needing_changes.append(
-                        osp.join(root, files[0])
-                    )
-                    datasets_not_needing_changes += 1
+                        else:
+                            list_of_datasets_not_needing_changes.append(osp.join(root, files[0]))
+                            datasets_not_needing_changes += 1
 
     if datasets_not_needing_changes > 0:
         print("Datasets that did not need combining:")
@@ -291,6 +249,9 @@ def main():
 
     print(f"Total datasets that needed combining  : {total_datasets_to_combine}")
     print(f"Total datasets that were already good : {datasets_not_needing_changes}")
+
+    if dry_run:
+        print(BC.warn("******************** DRY RUN COMPLETE ********************"))
 
 
 if __name__ == "__main__":
